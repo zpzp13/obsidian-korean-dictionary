@@ -170,12 +170,19 @@ async function queryOpenAI(prompt, apiKey, model) {
         }
       ],
       temperature: 0.7,
-      max_tokens: 500
+      max_tokens: 1500
     })
   });
   const data = await response.json();
   if (data.error) {
-    throw new Error(data.error.message);
+    const errorMsg = data.error.message || "";
+    if (errorMsg.includes("rate_limit") || errorMsg.includes("too many requests")) {
+      throw new Error("RATE_LIMIT");
+    }
+    if (errorMsg.includes("quota") || errorMsg.includes("insufficient_quota")) {
+      throw new Error("QUOTA_EXCEEDED");
+    }
+    throw new Error(errorMsg);
   }
   return data.choices[0].message.content;
 }
@@ -193,44 +200,28 @@ async function queryGemini(prompt, apiKey, model) {
       }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 500
+        maxOutputTokens: 1500
       }
     })
   });
   const data = await response.json();
   if (data.error) {
-    throw new Error(data.error.message);
+    const errorMsg = data.error.message || JSON.stringify(data.error);
+    if (errorMsg.includes("RESOURCE_EXHAUSTED") || response.status === 429) {
+      throw new Error("RATE_LIMIT");
+    }
+    if (errorMsg.includes("quota")) {
+      throw new Error("QUOTA_EXCEEDED");
+    }
+    throw new Error(errorMsg);
   }
-  if (!data.candidates || !data.candidates[0]) {
-    throw new Error("Gemini API \uC751\uB2F5 \uC624\uB958 (Rate limit \uB610\uB294 \uC798\uBABB\uB41C \uC751\uB2F5)");
+  if (!data.candidates || data.candidates.length === 0) {
+    throw new Error("Gemini API \uC751\uB2F5 \uC624\uB958");
+  }
+  if (!data.candidates[0].content || !data.candidates[0].content.parts || data.candidates[0].content.parts.length === 0) {
+    throw new Error("Gemini API \uC751\uB2F5 \uD615\uC2DD \uC624\uB958");
   }
   return data.candidates[0].content.parts[0].text;
-}
-async function queryClaude(prompt, apiKey, model) {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 500,
-      messages: [
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      system: "\uB2F9\uC2E0\uC740 \uD55C\uAD6D\uC5B4 \uC5B8\uC5B4 \uC804\uBB38\uAC00\uC785\uB2C8\uB2E4. \uC8FC\uC5B4\uC9C4 \uB2E8\uC5B4\uC758 \uD55C\uC790, \uC720\uC758\uC5B4, \uBC18\uC758\uC5B4, \uC6A9\uB840\uB97C JSON \uD615\uC2DD\uC73C\uB85C \uC81C\uACF5\uD569\uB2C8\uB2E4."
-    })
-  });
-  const data = await response.json();
-  if (data.error) {
-    throw new Error(data.error.message);
-  }
-  return data.content[0].text;
 }
 async function queryGroq(prompt, apiKey, model) {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -252,12 +243,19 @@ async function queryGroq(prompt, apiKey, model) {
         }
       ],
       temperature: 0.7,
-      max_tokens: 1e3
+      max_tokens: 1500
     })
   });
   const data = await response.json();
   if (data.error) {
-    throw new Error(data.error.message);
+    const errorMsg = data.error.message || "";
+    if (errorMsg.includes("rate_limit") || errorMsg.includes("too many requests") || response.status === 429) {
+      throw new Error("RATE_LIMIT");
+    }
+    if (errorMsg.includes("quota")) {
+      throw new Error("QUOTA_EXCEEDED");
+    }
+    throw new Error(errorMsg);
   }
   return data.choices[0].message.content;
 }
@@ -267,22 +265,24 @@ async function generateAIContent(word, definition, provider, apiKey, model, gene
       return {};
     }
     const prompt = `\uB2E8\uC5B4: ${word}
-\uB73B: ${definition}
+\uC815\uC758: ${definition}
+
+**\uC911\uC694**: \uC704 '\uC815\uC758'\uC5D0 \uC815\uD655\uD788 \uBD80\uD569\uD558\uB294 \uC758\uBBF8\uB85C\uB9CC \uB2F5\uBCC0\uD558\uC138\uC694. \uAC19\uC740 \uBC1C\uC74C\uC774\uB77C\uB3C4 \uB2E4\uB978 \uC758\uBBF8(\uB3D9\uC74C\uC774\uC758\uC5B4)\uB294 \uC808\uB300 \uD63C\uB3D9\uD558\uC9C0 \uB9C8\uC138\uC694.
 
 \uB2E4\uC74C JSON \uD615\uC2DD\uC73C\uB85C\uB9CC \uC751\uB2F5\uD558\uC138\uC694:
 {
-  "hanja": "\uC8FC\uC5B4\uC9C4 \uB2E8\uC5B4\uC758 \uC74C(\uBC1C\uC74C)\uACFC \uC815\uC758\uC5D0 \uC815\uD655\uD788 \uBD80\uD569\uD558\uB294 \uD55C\uC790 \uD45C\uAE30 (\uBC18\uB4DC\uC2DC \uD558\uB098\uB9CC, \uC815\uD655\uC131\uC774 \uCD5C\uC6B0\uC120)",
-  "synonyms": ["\uC8FC\uC5B4\uC9C4 \uB2E8\uC5B4\uC758 \uC815\uC758\uC5D0 \uBD80\uD569\uD558\uB294 \uC720\uC758\uC5B4, \uCD5C\uB300 5\uAC1C\uAE4C\uC9C0, \uD55C\uC790\uC5B4\uB294 \uBC18\uB4DC\uC2DC \uD55C\uC790\uB97C \uBCD1\uAE30 (\uC608: \uC804\uC7C1(\u6230\u722D))"],
-  "antonyms": ["\uC8FC\uC5B4\uC9C4 \uB2E8\uC5B4\uC758 \uC815\uC758\uC5D0 \uBD80\uD569\uD558\uB294 \uBC18\uC758\uC5B4, \uCD5C\uB300 5\uAC1C\uAE4C\uC9C0, \uD55C\uC790\uC5B4\uB294 \uBC18\uB4DC\uC2DC \uD55C\uC790\uB97C \uBCD1\uAE30"],
-  "examples": ["\uC8FC\uC5B4\uC9C4 \uB2E8\uC5B4 '${word}' \uC790\uCCB4\uB97C \uD3EC\uD568\uD558\uB294 \uC2E4\uC81C \uC0AC\uC6A9 \uC6A9\uB840 (\uC720\uC758\uC5B4\uB098 \uBC18\uC758\uC5B4\uAC00 \uC544\uB2CC \uC6D0\uB798 \uB2E8\uC5B4), \uCD5C\uB300 3\uAC1C\uAE4C\uC9C0. \uB274\uC2A4, \uBE14\uB85C\uADF8, \uB313\uAE00 \uB4F1 \uC2E4\uC81C \uC6A9\uB840 \uC6B0\uC120, \uC5C6\uC73C\uBA74 \uC608\uBB38 1\uAC1C \uC0DD\uC131"]
+  "hanja": "'${word}' \uB2E8\uC5B4\uAC00 \uD55C\uC790\uC5B4\uC778 \uACBD\uC6B0\uC5D0\uB9CC \uD574\uB2F9 \uD55C\uC790 \uD45C\uAE30. \uACE0\uC720\uC5B4(\uC0AC\uB791, \uD558\uB298 \uB4F1)\uB098 \uC678\uB798\uC5B4(\uCEF4\uD4E8\uD130 \uB4F1)\uB294 \uBE48 \uBB38\uC790\uC5F4. \uD55C\uC790\uC5B4\uB9CC \uD45C\uAE30 (\uC608: \uC560\uC815\u2192\u611B\u60C5, \uC804\uC7C1\u2192\u6230\u722D). \uBC1C\uC74C\uACFC \uC815\uC758 \uBAA8\uB450 \uC815\uD655\uD788 \uBD80\uD569\uD574\uC57C \uD568.",
+  "synonyms": ["\uC704 \uC815\uC758\uC758 \uC720\uC758\uC5B4 \uCD5C\uB300 5\uAC1C, \uD55C\uC790\uC5B4\uB294 \uD55C\uC790 \uBCD1\uAE30 (\uC608: \uC804\uC7C1(\u6230\u722D))"],
+  "antonyms": ["\uC704 \uC815\uC758\uC758 \uBC18\uC758\uC5B4 \uCD5C\uB300 5\uAC1C, \uD55C\uC790\uC5B4\uB294 \uD55C\uC790 \uBCD1\uAE30"],
+  "examples": ["'${word}'\uAC00 \uC704 \uC815\uC758\uC758 \uC758\uBBF8\uB85C \uC2E4\uC81C \uC0AC\uC6A9\uB41C \uBB38\uC7A5. \uC778\uD130\uB137 \uB274\uC2A4/\uC6F9\uD398\uC774\uC9C0 \uB4F1\uC5D0\uC11C \uC2E4\uC81C \uC4F0\uC778 \uC6A9\uB840\uB97C \uCC3E\uB418, \uBC18\uB4DC\uC2DC \uBB38\uB9E5\uC0C1 \uC704 \uC815\uC758\uC5D0 \uBD80\uD569\uD558\uB294 \uC758\uBBF8\uB85C \uC0AC\uC6A9\uB41C \uAC83\uB9CC \uD3EC\uD568. \uC801\uD569\uD55C \uC6A9\uB840\uAC00 \uC5C6\uC73C\uBA74 \uBE48 \uBC30\uC5F4 \uBC18\uD658"]
 }
 
 \uC8FC\uC758\uC0AC\uD56D:
-- \uC21C\uC218\uD55C JSON\uB9CC \uBC18\uD658 (\uCF54\uB4DC\uBE14\uB85D \uC5C6\uC774)
-- \uD55C\uC790\uAC00 \uC5C6\uAC70\uB098 \uD655\uC2E4\uD558\uC9C0 \uC54A\uC73C\uBA74 \uBE48 \uBB38\uC790\uC5F4
-- \uAC1C\uC218\uB97C \uC5B5\uC9C0\uB85C \uCC44\uC6B8 \uD544\uC694 \uC5C6\uC74C
-- \uC720\uC0AC\uD55C \uC758\uBBF8\uC758 \uB2E8\uC5B4\uB97C \uCD5C\uB300\uD55C \uC81C\uACF5
-- \uC601\uC5B4\uC640 \uD55C\uC790\uB97C \uC81C\uC678\uD55C \uB2E4\uB978 \uC5B8\uC5B4(\uC77C\uBCF8\uC5B4, \uC911\uAD6D\uC5B4 \uAC04\uCCB4\uC790 \uB4F1)\uB294 \uC808\uB300 \uC0AC\uC6A9 \uAE08\uC9C0`;
+- \uC21C\uC218 JSON\uB9CC \uBC18\uD658 (\uCF54\uB4DC\uBE14\uB85D \uC5C6\uC774)
+- \uD55C\uC790\uB294 \uD55C\uC790\uC5B4\uB9CC \uD45C\uAE30 (\uACE0\uC720\uC5B4/\uC678\uB798\uC5B4\uB294 \uBE48 \uBB38\uC790\uC5F4)
+- \uC608\uBB38\uC740 \uBC18\uB4DC\uC2DC \uBB38\uB9E5\uC0C1 \uC704 \uC815\uC758\uC5D0 \uBD80\uD569\uD574\uC57C \uD568
+- \uB3D9\uC74C\uC774\uC758\uC5B4 \uC808\uB300 \uD63C\uB3D9 \uAE08\uC9C0 (\uC608: '\uB208(\u96EA)'\uACFC '\uB208(\u76EE)'\uC740 \uC644\uC804\uD788 \uB2E4\uB984)
+- \uAC1C\uC218\uB97C \uC5B5\uC9C0\uB85C \uCC44\uC6B8 \uD544\uC694 \uC5C6\uC74C`;
     let responseText;
     switch (provider) {
       case "chatgpt":
@@ -290,9 +290,6 @@ async function generateAIContent(word, definition, provider, apiKey, model, gene
         break;
       case "gemini":
         responseText = await queryGemini(prompt, apiKey, model);
-        break;
-      case "claude":
-        responseText = await queryClaude(prompt, apiKey, model);
         break;
       case "groq":
         responseText = await queryGroq(prompt, apiKey, model);
@@ -306,7 +303,19 @@ async function generateAIContent(word, definition, provider, apiKey, model, gene
     }
     return JSON.parse(jsonText);
   } catch (error) {
-    return { error: error.message || "AI \uC0DD\uC131 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4." };
+    const providerNames = {
+      "chatgpt": "ChatGPT",
+      "gemini": "Gemini",
+      "groq": "Groq"
+    };
+    const errorMsg = error.message || "";
+    if (errorMsg === "RATE_LIMIT") {
+      return { error: `${providerNames[provider]} API \uC81C\uD55C \uCD08\uACFC (1\uBD84 \uD6C4 \uC7AC\uC2DC\uB3C4)` };
+    }
+    if (errorMsg === "QUOTA_EXCEEDED") {
+      return { error: `${providerNames[provider]} \uC77C\uC77C \uD560\uB2F9\uB7C9 \uC18C\uC9C4 (\uB0B4\uC77C \uC7AC\uC2DC\uB3C4)` };
+    }
+    return { error: `${providerNames[provider]} API \uC624\uB958` };
   }
 }
 async function validateDictionaryAPIKey(apiKey) {
@@ -335,9 +344,6 @@ async function validateAIAPIKey(provider, apiKey, model) {
         break;
       case "gemini":
         await queryGemini(testPrompt, apiKey, model);
-        break;
-      case "claude":
-        await queryClaude(testPrompt, apiKey, model);
         break;
       case "groq":
         await queryGroq(testPrompt, apiKey, model);
@@ -376,7 +382,6 @@ var DEFAULT_SETTINGS = {
 var AI_MODELS = {
   chatgpt: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"],
   gemini: ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"],
-  claude: ["claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229"],
   groq: ["llama-3.3-70b-versatile", "deepseek-r1-distill-llama-70b", "llama-3.1-70b-versatile"]
 };
 var VIEW_TYPE_DICTIONARY = "korean-dictionary-view";
@@ -1125,8 +1130,8 @@ var KoreanDictionarySettingTab = class extends import_obsidian2.PluginSettingTab
       }
     }
     containerEl.createEl("h3", { text: "\uD55C\uC790/\uC720\uC758\uC5B4/\uBC18\uC758\uC5B4/\uC6A9\uB840" });
-    new import_obsidian2.Setting(containerEl).setName("AI \uC81C\uACF5\uC790").setDesc("ChatGPT, Gemini, Claude, Groq").addDropdown((dropdown) => {
-      dropdown.addOption("chatgpt", "ChatGPT").addOption("gemini", "Gemini").addOption("claude", "Claude").addOption("groq", "Groq").setValue(this.plugin.settings.aiProvider).onChange(async (value) => {
+    new import_obsidian2.Setting(containerEl).setName("AI \uC81C\uACF5\uC790").setDesc("ChatGPT, Gemini, Groq").addDropdown((dropdown) => {
+      dropdown.addOption("chatgpt", "ChatGPT").addOption("gemini", "Gemini").addOption("groq", "Groq").setValue(this.plugin.settings.aiProvider).onChange(async (value) => {
         this.plugin.settings.aiProvider = value;
         this.plugin.settings.aiModel = AI_MODELS[value][0];
         await this.plugin.saveSettings();
