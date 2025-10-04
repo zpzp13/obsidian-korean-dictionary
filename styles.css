@@ -1,0 +1,522 @@
+/* Korean Dictionary Plugin Styles */
+
+/* 컨테이너 */
+.dict-container {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+/* 헤더 */
+.dict-header {
+	padding: 16px;
+	position: relative;
+}
+
+/* 검색 컨테이너 */
+.dict-search-container {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	position: relative;
+	container-type: inline-size;
+}
+
+/* 모달 검색 (width 100%) */
+.dict-modal-search .dict-search-input-wrapper {
+	width: 100%;
+}
+
+/* 검색창 wrapper */
+.dict-search-input-wrapper {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex: 1;
+	min-width: 0;
+}
+
+/* 검색 아이콘 (장식용) */
+.dict-search-icon {
+	position: absolute;
+	left: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+	color: var(--background-modifier-border-hover);
+	transition: color 0.2s ease;
+}
+
+.dict-search-icon-focused {
+	color: var(--interactive-accent);
+}
+
+.dict-search-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* 검색 입력창 */
+.dict-search-input {
+	width: 100%;
+	padding: 10px 14px 10px 36px;
+	border: 2px solid var(--background-modifier-border-hover);
+	border-radius: 6px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: 14px;
+	transition: border-color 0.2s ease;
+	box-sizing: border-box;
+}
+
+.dict-search-input::placeholder {
+	color: var(--text-muted);
+}
+
+.dict-search-input:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+}
+
+/* 아이콘 버튼 (필터, AI 필터) - 텍스트 스타일 */
+.dict-icon-button {
+	background: none !important;
+	border: none;
+	outline: none;
+	box-shadow: none !important;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 0;
+	margin: 0;
+	transition: color 0.2s ease;
+	flex-shrink: 0;
+	user-select: none;
+	white-space: nowrap;
+}
+
+.dict-icon-button:hover,
+.dict-icon-button:focus {
+	background: none !important;
+	outline: none;
+	box-shadow: none !important;
+}
+
+.dict-icon-button svg {
+	width: 22px;
+	height: 22px;
+	color: var(--background-modifier-border-hover) !important;
+	transition: color 0.2s ease;
+}
+
+.dict-icon-button:hover svg {
+	color: var(--text-normal) !important;
+}
+
+.dict-icon-button .button-text {
+	font-size: 13px;
+	line-height: 22px;
+	font-weight: normal;
+	color: var(--background-modifier-border-hover);
+	transition: color 0.2s ease;
+}
+
+.dict-icon-button:hover .button-text {
+	color: var(--text-normal);
+}
+
+/* AI 버튼 ON 상태 */
+.dict-icon-button.dict-ai-button-active svg {
+	color: var(--interactive-accent) !important;
+}
+
+.dict-icon-button.dict-ai-button-active .button-text {
+	color: var(--interactive-accent);
+}
+
+.dict-icon-button.dict-ai-button-active:hover svg {
+	color: var(--interactive-accent-hover) !important;
+}
+
+.dict-icon-button.dict-ai-button-active:hover .button-text {
+	color: var(--interactive-accent-hover);
+}
+
+/* 드롭다운 - 옵시디언 네이티브 스타일 */
+.dict-filter-dropdown {
+	position: fixed;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	padding: 4px;
+	box-shadow: var(--shadow-s);
+	z-index: var(--layer-menu);
+	min-width: 160px;
+	max-width: 280px;
+	max-height: 400px;
+	overflow-y: auto;
+	opacity: 1;
+	transform: translateY(0) scale(1);
+	transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+
+.dict-filter-dropdown.dict-hidden {
+	opacity: 0;
+	transform: translateY(-8px) scale(0.96);
+	pointer-events: none;
+	display: none;
+}
+
+/* 섹션 헤더 */
+.dict-filter-section-header {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--text-muted);
+	padding: 6px 8px 4px 8px;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+
+/* 필터 항목 - 옵시디언 메뉴 아이템 스타일 */
+.dict-filter-item {
+	display: flex;
+	align-items: center;
+	padding: 4px 8px;
+	cursor: pointer;
+	border-radius: var(--radius-s);
+	transition: background-color 0.1s ease-in-out;
+	font-size: 13px;
+	font-weight: normal;
+	margin: 1px 0;
+	gap: 8px;
+	color: var(--text-normal);
+}
+
+.dict-filter-item:hover {
+	background: var(--background-modifier-hover);
+}
+
+/* 체크마크 */
+.dict-filter-checkmark {
+	width: 16px;
+	height: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	font-size: 14px;
+	color: var(--interactive-accent);
+	opacity: 0;
+	transition: opacity 0.1s ease-in-out;
+}
+
+.dict-filter-item-selected .dict-filter-checkmark {
+	opacity: 1;
+}
+
+/* 라벨 */
+.dict-filter-label {
+	flex: 1;
+	user-select: none;
+}
+
+/* 한자 래퍼 */
+.dict-hanja-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dict-hanja-wrapper span {
+	font-size: 20px;
+}
+
+/* 복사 버튼 */
+.dict-copy-button {
+	background: none !important;
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+	cursor: pointer;
+	padding: 0;
+	margin: 0;
+	color: var(--text-muted);
+	transition: color 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.dict-copy-button:hover,
+.dict-copy-button:focus,
+.dict-copy-button:active {
+	background: none !important;
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+	color: var(--interactive-accent);
+}
+
+.dict-copy-button svg {
+	width: 14px;
+	height: 14px;
+}
+
+/* 메인 컨텐츠 */
+.dict-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+}
+
+/* Placeholder */
+.dict-placeholder {
+	text-align: center;
+	color: var(--text-muted);
+	padding: 40px 20px;
+	font-size: 14px;
+}
+
+/* 로딩 */
+.dict-loading {
+	text-align: center;
+	color: var(--text-muted);
+	padding: 20px;
+	font-size: 14px;
+}
+
+/* 에러 메시지 */
+.dict-error,
+.dict-not-found {
+	text-align: center;
+	color: var(--text-error);
+	padding: 20px;
+	font-size: 14px;
+}
+
+.dict-not-found {
+	color: var(--text-muted);
+}
+
+/* 결과 영역 */
+.dict-result {
+	animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* 품사 및 뜻풀이 */
+.dict-entry {
+	display: table;
+	width: 100%;
+	margin-bottom: 24px;
+	border-collapse: separate;
+	border-spacing: 0 4px;
+}
+
+.dict-section {
+	display: table-row;
+}
+
+.dict-label-cell {
+	display: table-cell;
+	vertical-align: middle;
+	text-align: center;
+	width: 70px;
+	padding: 4px;
+}
+
+.dict-label-tag {
+	display: inline-block;
+	font-size: 12px;
+	font-weight: normal;
+	padding: 5px 8px;
+	border-radius: 12px;
+	white-space: nowrap;
+	min-width: 50px;
+	text-align: center;
+	letter-spacing: 0.05em;
+	background: var(--tag-background);
+	color: var(--tag-color);
+}
+
+.dict-content-text {
+	display: table-cell;
+	vertical-align: middle;
+	padding: 8px 12px;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--text-normal);
+	user-select: text;
+	cursor: text;
+}
+
+/* AI 배지 */
+.dict-ai-badge {
+	font-size: 9px;
+	padding: 2px 5px;
+	background: rgba(255, 255, 255, 0.3);
+	color: white;
+	border-radius: 3px;
+	font-weight: 600;
+	letter-spacing: 0.5px;
+}
+
+/* AI 로딩 및 상태 */
+.dict-ai-loading-text {
+	color: var(--text-muted);
+	font-size: 13px;
+	font-style: italic;
+}
+
+.dict-ai-error {
+	color: var(--text-error);
+	font-size: 13px;
+	font-style: italic;
+}
+
+.dict-ai-empty {
+	color: var(--text-muted);
+	font-size: 13px;
+	font-style: italic;
+}
+
+/* 품사 구분자 */
+.dict-separator {
+	margin: 20px 0;
+	border-top: 1px solid var(--background-modifier-border);
+	width: 100%;
+	height: 0;
+}
+
+/* 유의어/반의어 목록 */
+.dict-word-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.dict-word-item {
+	color: var(--text-normal);
+}
+
+.dict-word-item:not(:last-child)::after {
+	content: '·';
+	margin-left: 6px;
+	color: var(--text-muted);
+}
+
+/* 예문 */
+.dict-example {
+	margin-bottom: 6px;
+	line-height: 1.6;
+}
+
+.dict-example-num {
+	color: var(--text-muted);
+	margin-right: 6px;
+	font-size: 12px;
+}
+
+/* API 상태 */
+.api-status {
+	margin-top: 4px;
+	font-size: 12px;
+	text-align: right;
+}
+
+.api-status-success {
+	color: var(--text-success);
+}
+
+.api-status-error {
+	color: var(--text-error);
+}
+
+/* Floating 모달 */
+.dict-modal .modal {
+	width: 700px;
+	max-width: 90vw;
+	height: 600px;
+	max-height: 80vh;
+}
+
+.dict-modal .modal-content {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+}
+
+.dict-modal .dict-content {
+	flex: 1;
+	overflow-y: auto;
+}
+
+/* 스크롤바 스타일링 */
+.dict-content::-webkit-scrollbar {
+	width: 8px;
+}
+
+.dict-content::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.dict-content::-webkit-scrollbar-thumb {
+	background: var(--background-modifier-border);
+	border-radius: 4px;
+}
+
+.dict-content::-webkit-scrollbar-thumb:hover {
+	background: var(--text-muted);
+}
+
+/* 반응형 디자인 - 좁은 패널에서 버튼 텍스트 숨기기 */
+@container (max-width: 500px) {
+	.dict-icon-button .button-text {
+		display: none !important;
+	}
+
+	.dict-icon-button {
+		width: 32px;
+		padding: 2px 4px;
+		justify-content: center;
+	}
+
+	.dict-search-input-wrapper {
+		flex-grow: 2;
+		min-width: 0 !important;
+		flex-basis: 0;
+	}
+}
+
+/* Fallback for browsers without container query support */
+@media (max-width: 700px) {
+	.dict-icon-button .button-text {
+		display: none !important;
+	}
+
+	.dict-icon-button {
+		width: 32px;
+		padding: 2px 4px;
+		justify-content: center;
+	}
+
+	.dict-search-input-wrapper {
+		flex-grow: 2;
+		min-width: 0 !important;
+		flex-basis: 0;
+	}
+}
